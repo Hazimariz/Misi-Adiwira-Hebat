@@ -1,0 +1,2731 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Misi Adiwira Hebat: Pengembaraan Mencari Harta Karun</title>
+  <!-- Google Fonts untuk tipografi mesra kanak-kanak -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --primary-blue: #1e88e5;
+      --deep-blue: #0d47a1;
+      --sunny-yellow: #ffd600;
+      --bright-orange: #ff6d00;
+      --fresh-green: #00c853;
+      --soft-cream: #fffdf5;
+      --card-border: #ffb300;
+      --danger-red: #ff3d00;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(180deg, #38bdf8 0%, #bae6fd 100%);
+    }
+
+    h1, h2, h3, .font-title {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    #game-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ==================== HUD / PAPARAN ANTARA MUKA ==================== */
+    #hud {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px;
+    }
+
+    .hud-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .hud-pill {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.94);
+      border: 3px solid #f59e0b;
+      border-radius: 20px;
+      padding: 8px 14px;
+      box-shadow: 0 6px 0 rgba(180, 83, 9, 0.25), 0 10px 20px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #1e293b;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    .hud-hero-badge {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border-color: #93c5fd;
+    }
+
+    .hearts-container {
+      display: flex;
+      gap: 3px;
+      font-size: 1.15rem;
+    }
+
+    .heart-lost {
+      filter: grayscale(1);
+      opacity: 0.35;
+      transform: scale(0.85);
+    }
+
+    .progress-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-width: 175px;
+      gap: 4px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 2px solid #cbd5e1;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22c55e, #eab308, #f97316);
+      border-radius: 999px;
+      transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .zone-banner {
+      align-self: center;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: white;
+      border: 3px solid #fde047;
+      border-radius: 999px;
+      padding: 6px 20px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.05rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 5px 0 #9a3412, 0 8px 16px rgba(0,0,0,0.2);
+      text-align: center;
+      margin-top: 4px;
+      transition: transform 0.3s ease;
+    }
+
+    .hud-btn {
+      pointer-events: auto;
+      cursor: pointer;
+      background: linear-gradient(180deg, #fde047, #f59e0b);
+      border: 3px solid #ffffff;
+      border-radius: 16px;
+      padding: 8px 14px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      color: #78350f;
+      box-shadow: 0 4px 0 #b45309;
+      transition: transform 0.12s ease;
+      font-size: 0.92rem;
+    }
+
+    .hud-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #b45309;
+    }
+
+    /* Petunjuk Arah / Kompas Checkpoint */
+    .compass-guide {
+      align-self: center;
+      background: rgba(15, 23, 42, 0.78);
+      color: #fef08a;
+      border: 2px solid #facc15;
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(4px);
+    }
+
+    #compass-arrow {
+      display: inline-block;
+      font-size: 1.2rem;
+      transition: transform 0.1s linear;
+    }
+
+    /* ==================== KAWALAN SENTUH (MOBILE / TABLET) ==================== */
+    #touch-controls {
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 15;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: none;
+    }
+
+    #joystick-zone {
+      pointer-events: auto;
+      width: 126px;
+      height: 126px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.28);
+      border: 3px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      position: relative;
+      touch-action: none;
+      backdrop-filter: blur(3px);
+    }
+
+    #joystick-knob {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fde047, #f59e0b);
+      border: 3px solid #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .action-buttons {
+      pointer-events: auto;
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .touch-action-btn {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.28);
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    .touch-action-btn:active, .touch-action-btn.active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.28);
+    }
+
+    #btn-sprint {
+      background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+      width: 66px;
+      height: 66px;
+    }
+
+    #btn-jump {
+      background: linear-gradient(180deg, #22c55e, #15803d);
+      width: 82px;
+      height: 82px;
+      font-size: 0.95rem;
+    }
+
+    /* ==================== MODAL OVERLAYS ==================== */
+    .overlay-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.68);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .cartoon-card {
+      background: linear-gradient(180deg, #ffffff 0%, #fefce8 100%);
+      border: 5px solid #f59e0b;
+      border-radius: 28px;
+      box-shadow: 0 12px 0 #b45309, 0 24px 48px rgba(0, 0, 0, 0.35);
+      max-width: 680px;
+      width: 100%;
+      padding: 24px 26px;
+      position: relative;
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    /* Kilatan lembut apabila terlanggar halangan */
+    #hit-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 9;
+      background: radial-gradient(circle, transparent 50%, rgba(239, 68, 68, 0.42) 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .game-logo-banner {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+      border: 4px solid #facc15;
+      border-radius: 22px;
+      padding: 16px 20px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 8px 0 #1e3a8a;
+      margin-bottom: 18px;
+    }
+
+    .game-logo-banner h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 3.8vw, 2.15rem);
+      color: #fde047;
+      text-shadow: 0 3px 0 #9a3412, 0 5px 10px rgba(0,0,0,0.3);
+      line-height: 1.15;
+    }
+
+    .game-logo-banner p {
+      margin: 6px 0 0;
+      font-size: clamp(0.95rem, 2.3vw, 1.15rem);
+      font-weight: 800;
+      color: #e0f2fe;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: 800;
+      color: #1e3a8a;
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .hero-name-input {
+      width: 100%;
+      max-width: 360px;
+      padding: 12px 18px;
+      font-size: 1.15rem;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 600;
+      text-align: center;
+      border: 3px solid #3b82f6;
+      border-radius: 16px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .hero-name-input:focus {
+      border-color: #f97316;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.22);
+    }
+
+    .instructions-box {
+      background: #f0fdf4;
+      border: 3px solid #22c55e;
+      border-radius: 20px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      color: #14532d;
+    }
+
+    .instructions-box h3 {
+      margin: 0 0 8px;
+      color: #15803d;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+      font-size: 0.93rem;
+      font-weight: 700;
+    }
+
+    .control-item {
+      background: #ffffff;
+      border: 2px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .key-badge {
+      background: #fef08a;
+      border: 2px solid #eab308;
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      color: #854d0e;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .btn-primary-3d {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 15px 24px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+      border: 4px solid #fef08a;
+      border-radius: 22px;
+      box-shadow: 0 7px 0 #15803d, 0 12px 24px rgba(22, 163, 74, 0.35);
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.15s ease;
+    }
+
+    .btn-primary-3d:hover {
+      filter: brightness(1.06);
+    }
+
+    .btn-primary-3d:active {
+      transform: translateY(5px);
+      box-shadow: 0 2px 0 #15803d;
+    }
+
+    .btn-secondary-3d {
+      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+      box-shadow: 0 7px 0 #1d4ed8, 0 12px 24px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary-3d:active {
+      box-shadow: 0 2px 0 #1d4ed8;
+    }
+
+    /* ==================== MODAL KUIZ ==================== */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .cp-pill {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: #fff;
+      font-family: 'Fredoka', sans-serif;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      border: 2px solid #fde047;
+    }
+
+    .zone-pill {
+      background: #dbeafe;
+      color: #1e40af;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+
+    .situation-box {
+      background: #fff7ed;
+      border-left: 6px solid #f97316;
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      color: #7c2d12;
+      font-size: 1.02rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .question-text {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.32rem;
+      color: #1e293b;
+      margin: 0 0 16px;
+      line-height: 1.35;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      text-align: left;
+      padding: 14px 16px;
+      background: #ffffff;
+      border: 3px solid #93c5fd;
+      border-radius: 18px;
+      box-shadow: 0 5px 0 #60a5fa;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #1e3a8a;
+      transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .option-btn:hover {
+      background: #eff6ff;
+      border-color: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    .option-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #60a5fa;
+    }
+
+    .option-letter {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #facc15, #f59e0b);
+      color: #78350f;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .option-btn.wrong-shake {
+      animation: shake 0.4s ease;
+      background: #fef2f2;
+      border-color: #ef4444;
+      box-shadow: 0 5px 0 #dc2626;
+      color: #991b1b;
+    }
+
+    .option-btn.correct-glow {
+      background: #dcfce7;
+      border-color: #22c55e;
+      box-shadow: 0 5px 0 #16a34a;
+      color: #14532d;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .quiz-feedback {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-weight: 800;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .feedback-wrong {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 2px solid #f87171;
+    }
+
+    /* ==================== MODAL LENCANA GANJARAN ==================== */
+    .reward-card {
+      text-align: center;
+      border-color: #22c55e;
+      box-shadow: 0 12px 0 #15803d, 0 24px 48px rgba(0,0,0,0.4);
+    }
+
+    .badge-showcase {
+      width: 110px;
+      height: 110px;
+      margin: 6px auto 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fef08a, #f59e0b);
+      border: 5px solid #ffffff;
+      box-shadow: 0 0 0 5px #f59e0b, 0 12px 24px rgba(245, 158, 11, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.4rem;
+      animation: bounceBadge 0.8s ease infinite alternate;
+    }
+
+    @keyframes bounceBadge {
+      0% { transform: scale(1) rotate(-3deg); }
+      100% { transform: scale(1.08) rotate(3deg); }
+    }
+
+    /* ==================== SIJIL TAMAT PERMAINAN ==================== */
+    .certificate-box {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 6px double #d97706;
+      border-radius: 24px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .cert-ribbon {
+      display: inline-block;
+      background: linear-gradient(90deg, #dc2626, #ea580c, #dc2626);
+      color: #fef08a;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.15rem;
+      padding: 6px 22px;
+      border-radius: 999px;
+      border: 3px solid #fde047;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .cert-player-name {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.85rem;
+      color: #1d4ed8;
+      margin: 6px 0;
+      text-decoration: underline wavy #f59e0b;
+    }
+
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .stat-box {
+      background: #ffffff;
+      border: 3px solid #fbbf24;
+      border-radius: 16px;
+      padding: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.5rem;
+      color: #15803d;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #64748b;
+    }
+
+    .badges-earned-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    .mini-badge {
+      background: #fff;
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 4px 9px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #92400e;
+    }
+
+    .closing-quote {
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 16px;
+      padding: 12px 16px;
+      color: #1e3a8a;
+      font-weight: 800;
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    .end-buttons-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 560px) {
+      .end-buttons-row {
+        grid-template-columns: 1fr;
+      }
+      .hud-pill {
+        padding: 6px 10px;
+        font-size: 0.82rem;
+      }
+      .progress-wrapper {
+        min-width: 125px;
+      }
+    }
+
+    /* Toast motivasi */
+    #toast-banner {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      z-index: 40;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      border: 3px solid #fde047;
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.05rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      text-align: center;
+    }
+
+    #toast-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Kanvas Dunia 3D -->
+  <div id="game-container"></div>
+
+  <!-- Kesan kilatan merah lembut apabila terkena halangan -->
+  <div id="hit-flash"></div>
+
+  <!-- Toast Motivasi -->
+  <div id="toast-banner">⭐ Hebat! Teruskan misi adiwira!</div>
+
+  <!-- HUD Semasa Bermain -->
+  <div id="hud" class="hidden">
+    <div>
+      <div class="hud-top">
+        <!-- Profil & Nyawa -->
+        <div class="hud-pill hud-hero-badge">
+          <span style="font-size:1.35rem;">🦸‍♂️</span>
+          <div>
+            <div id="hud-player-name" style="font-size:0.95rem;">Adik Adiwira</div>
+            <div id="hud-hearts" class="hearts-container" title="Nyawa Adiwira">❤️❤️❤️❤️❤️</div>
+          </div>
+        </div>
+
+        <!-- Markah & Kemajuan Checkpoint -->
+        <div class="hud-pill">
+          <div style="text-align:center;">
+            <div style="font-size:0.72rem; color:#64748b;">MARKAH</div>
+            <div style="font-family:'Fredoka'; font-size:1.15rem; color:#d97706;">⭐ <span id="hud-score">0</span>/80</div>
+          </div>
+          <div style="width:2px; height:30px; background:#e2e8f0;"></div>
+          <div style="text-align:center;">
+            <div style="font-size:0.72rem; color:#64748b;">SYILING</div>
+            <div style="font-family:'Fredoka'; font-size:1.15rem; color:#ca8a04;">🪙 <span id="hud-coins">0</span>/<span id="hud-coins-total">50</span></div>
+          </div>
+          <div style="width:2px; height:30px; background:#e2e8f0;"></div>
+          <div class="progress-wrapper">
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+              <span>MISI CHECKPOINT</span>
+              <span id="hud-cp-text" style="color:#16a34a;">0 / 8</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="hud-progress-fill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Butang Audio & Menu -->
+        <div style="display:flex; gap:8px;">
+          <button id="btn-audio-toggle" class="hud-btn" title="Tutup/Buka Muzik & Bunyi">🔊 Muzik</button>
+          <button id="btn-help-hud" class="hud-btn" title="Panduan Kawalan">❓ Panduan</button>
+        </div>
+      </div>
+
+      <!-- Nama Kawasan Semasa & Kompas Arah -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:6px;">
+        <div id="hud-zone-banner" class="zone-banner">🌲 Kawasan 1: Hutan Kejujuran</div>
+        <div class="compass-guide">
+          <span id="compass-arrow">⬆️</span>
+          <span id="compass-text">Menuju ke Checkpoint 1 (Bintang Emas)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kawalan Sentuh Skrin (Joystick & Butang Lompat/Lari) -->
+  <div id="touch-controls" class="hidden">
+    <div id="joystick-zone" aria-label="Joystick Pergerakan">
+      <div id="joystick-knob"></div>
+    </div>
+    <div class="action-buttons">
+      <button id="btn-sprint" class="touch-action-btn" type="button">
+        <span style="font-size:1.25rem;">⚡</span>
+        <span>LARI</span>
+      </button>
+      <button id="btn-jump" class="touch-action-btn" type="button">
+        <span style="font-size:1.4rem;">🦘</span>
+        <span>LOMPAT</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== SKRIN MENU UTAMA & ARAHAN ==================== -->
+  <div id="start-screen" class="overlay-screen">
+    <div class="cartoon-card">
+      <div class="game-logo-banner">
+        <div style="font-size:2.2rem; margin-bottom:4px;">🦸‍♂️✨🗺️🏆</div>
+        <h1>MISI ADIWIRA HEBAT:<br>PENGEMBARAAN MENCARI HARTA KARUN</h1>
+        <p>Pendidikan Moral • Tema: Kejujuran Dalam Keluarga</p>
+      </div>
+
+      <div class="input-group">
+        <label for="player-name-input">✏️ Masukkan Nama Adiwira Kamu:</label>
+        <input id="player-name-input" class="hero-name-input" type="text" maxlength="22" placeholder="Contoh: Adik Amir" value="Adik Adiwira" />
+      </div>
+
+      <div class="instructions-box">
+        <h3>🧭 Arahan Pengembaraan & Kawalan</h3>
+        <p style="margin:0 0 10px; font-size:0.95rem; font-weight:700; line-height:1.4;">
+          Terokai dunia fantasi 3D, sentuh <strong>8 Bintang Emas Checkpoint</strong> mengikut urutan, dan jawab soalan nilai <strong>Kejujuran dalam Keluarga</strong> dengan betul untuk membuka laluan ke <strong>Pulau Harta Karun</strong>!
+        </p>
+        <div class="controls-grid">
+          <div class="control-item"><span class="key-badge">⬆️ ⬇️ ⬅️ ➡️</span> <span>Bergerak ke semua arah</span></div>
+          <div class="control-item"><span class="key-badge">SPACE</span> <span>Melompat melepasi halangan</span></div>
+          <div class="control-item"><span class="key-badge">SHIFT</span> <span>Berlari pantas adiwira</span></div>
+          <div class="control-item"><span class="key-badge">📱 Sentuh</span> <span>Joystick & butang di skrin</span></div>
+        </div>
+      </div>
+
+      <button id="btn-start-game" class="btn-primary-3d" type="button">
+        <span>🚀 MULA PENGEMBARAAN!</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL KUIZ CHECKPOINT ==================== -->
+  <div id="quiz-modal" class="overlay-screen hidden">
+    <div class="cartoon-card">
+      <div class="quiz-header">
+        <span id="quiz-cp-badge" class="cp-pill">⭐ CHECKPOINT 1 / 8</span>
+        <span id="quiz-zone-badge" class="zone-pill">🌲 Hutan Kejujuran</span>
+      </div>
+
+      <h2 id="quiz-title" style="margin:0 0 10px; color:#d97706; font-size:1.35rem;">MAKSUD KEJUJURAN</h2>
+
+      <div id="quiz-situation" class="situation-box hidden"></div>
+
+      <p id="quiz-question" class="question-text">Apakah maksud kejujuran?</p>
+
+      <div id="quiz-options" class="options-list"></div>
+
+      <div id="quiz-feedback" class="quiz-feedback feedback-wrong hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL GANJARAN LENCANA ==================== -->
+  <div id="reward-modal" class="overlay-screen hidden">
+    <div class="cartoon-card reward-card">
+      <div style="font-family:'Fredoka'; color:#16a34a; font-size:1.15rem; font-weight:700;">✨ JAWAPAN TEPAT! +10 MARKAH ✨</div>
+      <div id="reward-badge-icon" class="badge-showcase">🏅</div>
+      <h2 id="reward-badge-title" style="margin:0 0 6px; color:#1e3a8a; font-size:1.55rem;">Lencana Bintang Jujur</h2>
+      <p id="reward-motivation" style="margin:0 0 18px; font-size:1.12rem; font-weight:800; color:#b45309;">
+        “Hebat! Kamu seorang yang jujur!”
+      </p>
+      <button id="btn-continue-mission" class="btn-primary-3d" type="button">
+        <span>➡️ TERUSKAN MISI ADIWIRA</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== SKRIN PENAMAT & SIJIL DIGITAL ==================== -->
+  <div id="victory-screen" class="overlay-screen hidden">
+    <div class="cartoon-card">
+      <div class="certificate-box">
+        <div class="cert-ribbon">🏆 SIJIL PENGHARGAAN DIGITAL 🏆</div>
+        <h2 style="margin:4px 0; color:#92400e; font-size:1.65rem;">ADIWIRA KEJUJURAN</h2>
+        <div style="font-size:0.95rem; font-weight:800; color:#78350f;">Dianugerahkan kepada:</div>
+        <div id="cert-player-name" class="cert-player-name">Adik Adiwira</div>
+
+        <div class="stats-summary">
+          <div class="stat-box">
+            <div class="stat-value">⭐ <span id="cert-score">80</span> / 80</div>
+            <div class="stat-label">MARKAH KUIZ</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">🪙 <span id="cert-coins">0</span> / <span id="cert-coins-total">50</span></div>
+            <div class="stat-label">SYILING EMAS</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">🚩 <span id="cert-checkpoints">8</span> / 8</div>
+            <div class="stat-label">CHECKPOINT</div>
+          </div>
+        </div>
+
+        <div id="cert-badges-list" class="badges-earned-row"></div>
+
+        <div class="closing-quote">
+          “Tahniah, Adiwira Hebat! Kamu telah berjaya menamatkan misi mencari harta karun. Ingatlah, kejujuran menjadikan keluarga lebih bahagia, saling mempercayai dan hidup dalam harmoni.”
+        </div>
+      </div>
+
+      <div class="end-buttons-row">
+        <button id="btn-replay" class="btn-primary-3d" type="button">🔄 MAIN SEMULA</button>
+        <button id="btn-main-menu" class="btn-primary-3d btn-secondary-3d" type="button">🏠 KEMBALI KE MENU UTAMA</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       2. SISTEM AUDIO WEB AUDIO API (MUZIK LATAR CERIA, KESAN BUNYI & SUARA)
+       ========================================================================= */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.bgmInterval = null;
+        this.stepIndex = 0;
+        this.preferredVoice = null;
+        this.initVoice();
+      }
+
+      initVoice() {
+        if (!('speechSynthesis' in window)) return;
+        const loadVoices = () => {
+          const voices = window.speechSynthesis.getVoices();
+          if (!voices.length) return;
+          // Keutamaan suara Bahasa Melayu (ms-MY), diikuti Bahasa Indonesia (id-ID)
+          this.preferredVoice =
+            voices.find(v => v.lang.toLowerCase().includes('ms')) ||
+            voices.find(v => v.lang.toLowerCase().includes('id')) ||
+            voices.find(v => v.default) ||
+            voices[0];
+        };
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+
+      speak(text) {
+        if (this.muted || !('speechSynthesis' in window)) return;
+        try {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          if (this.preferredVoice) {
+            utter.voice = this.preferredVoice;
+            utter.lang = this.preferredVoice.lang;
+          } else {
+            utter.lang = 'ms-MY';
+          }
+          utter.pitch = 1.15;
+          utter.rate = 0.98;
+          utter.volume = 1.0;
+          window.speechSynthesis.speak(utter);
+        } catch (e) {}
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+        this.startBGM();
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        if (this.muted && 'speechSynthesis' in window) {
+          try { window.speechSynthesis.cancel(); } catch (e) {}
+        }
+        return this.muted;
+      }
+
+      playTone(freq, type = 'sine', duration = 0.2, volume = 0.12, delay = 0) {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime + delay;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.exponentialRampToValueAtTime(volume, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.03);
+        } catch (e) {}
+      }
+
+      playCoin() {
+        this.playTone(987.77, 'sine', 0.1, 0.14, 0);
+        this.playTone(1318.51, 'triangle', 0.22, 0.15, 0.06);
+      }
+
+      playObstacleHit() {
+        this.playTone(190, 'sawtooth', 0.16, 0.14, 0);
+        this.playTone(130, 'triangle', 0.24, 0.15, 0.08);
+      }
+
+      playJump() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(250, now);
+        osc.frequency.exponentialRampToValueAtTime(590, now + 0.21);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.24);
+      }
+
+      playCheckpointTrigger() {
+        this.playTone(523.25, 'triangle', 0.18, 0.16, 0);
+        this.playTone(659.25, 'triangle', 0.18, 0.16, 0.09);
+        this.playTone(783.99, 'triangle', 0.28, 0.18, 0.18);
+      }
+
+      playCorrect() {
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        notes.forEach((n, i) => {
+          this.playTone(n, 'triangle', 0.25, 0.18, i * 0.08);
+        });
+      }
+
+      playWrong() {
+        this.playTone(230, 'sawtooth', 0.2, 0.11, 0);
+        this.playTone(185, 'sawtooth', 0.28, 0.11, 0.15);
+      }
+
+      playTreasureFanfare() {
+        const fanfare = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5, 1318.5, 1567.98];
+        fanfare.forEach((n, i) => {
+          this.playTone(n, 'triangle', 0.34, 0.2, i * 0.11);
+        });
+      }
+
+      startBGM() {
+        if (this.bgmInterval) return;
+        // Lagu latar pengembaraan platformer ceria (melodi utama + bass + kord ringan)
+        const leadMelody = [
+          523.25, 659.25, 783.99, 659.25, 880.00, 783.99, 659.25, 523.25,
+          587.33, 698.46, 880.00, 698.46, 783.99, 659.25, 587.33, 0,
+          523.25, 659.25, 783.99, 1046.50, 987.77, 880.00, 783.99, 659.25,
+          698.46, 880.00, 783.99, 659.25, 587.33, 659.25, 523.25, 0
+        ];
+        const bassLine = [
+          130.81, 0, 196.00, 0, 130.81, 0, 196.00, 0,
+          146.83, 0, 220.00, 0, 196.00, 0, 246.94, 0,
+          130.81, 0, 196.00, 0, 174.61, 0, 220.00, 0,
+          174.61, 0, 196.00, 0, 196.00, 0, 130.81, 0
+        ];
+        this.bgmInterval = setInterval(() => {
+          if (this.muted || !this.ctx || this.ctx.state !== 'running') return;
+          const idx = this.stepIndex % leadMelody.length;
+          const lead = leadMelody[idx];
+          const bass = bassLine[idx];
+
+          if (lead > 0) {
+            this.playTone(lead, 'triangle', 0.18, 0.045, 0);
+          }
+          if (bass > 0) {
+            this.playTone(bass, 'sine', 0.24, 0.055, 0);
+          }
+          // Sentuhan kord harmoni pada setiap ketukan ke-4
+          if (idx % 4 === 0 && lead > 0) {
+            this.playTone(lead * 0.75, 'sine', 0.22, 0.022, 0);
+          }
+          this.stepIndex++;
+        }, 210);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* =========================================================================
+       2B. DATA KANDUNGAN 8 CHECKPOINT PENDIDIKAN MORAL (NILAI KEJUJURAN)
+       ========================================================================= */
+    const CHECKPOINTS_DATA = [
+      {
+        id: 1,
+        zoneName: "Hutan Kejujuran",
+        zoneEmoji: "🌲",
+        title: "MAKSUD KEJUJURAN",
+        situation: null,
+        question: "Apakah maksud kejujuran?",
+        options: [
+          { key: "A", text: "Bercakap benar, amanah, ikhlas dalam setiap perbuatan." },
+          { key: "B", text: "Sentiasa berbohong apabila bercakap." }
+        ],
+        correct: "A",
+        badgeIcon: "🌟",
+        badgeName: "Lencana Bintang Jujur",
+        motivation: "“Hebat! Kamu seorang yang jujur!”"
+      },
+      {
+        id: 2,
+        zoneName: "Jambatan Keluarga",
+        zoneEmoji: "🌉",
+        title: "CONTOH KEJUJURAN DALAM KELUARGA",
+        situation: null,
+        question: "Pilih contoh bersikap jujur dalam keluarga.",
+        options: [
+          { key: "A", text: "Mencuri duit ibu ayah." },
+          { key: "B", text: "Memohon maaf sekiranya membuat perkara yang salah." },
+          { key: "C", text: "Tidak menjalankan tugas di rumah." }
+        ],
+        correct: "B",
+        badgeIcon: "💖",
+        badgeName: "Lencana Hati Keluarga",
+        motivation: "“Syabas, teruskan misi adiwira!”"
+      },
+      {
+        id: 3,
+        zoneName: "Taman Amanah",
+        zoneEmoji: "🌷",
+        title: "AMALAN KEJUJURAN",
+        situation: null,
+        question: "Bagaimana menunjukkan sikap kejujuran terhadap keluarga?",
+        options: [
+          { key: "A", text: "Berdiam diri apabila melakukan kesalahan." },
+          { key: "B", text: "Tidak jujur apabila berjanji." },
+          { key: "C", text: "Tepati janji." }
+        ],
+        correct: "C",
+        badgeIcon: "🤝",
+        badgeName: "Lencana Janji Setia",
+        motivation: "“Bagus! Kamu semakin hampir dengan harta karun!”"
+      },
+      {
+        id: 4,
+        zoneName: "Bukit Kepercayaan",
+        zoneEmoji: "⛰️",
+        title: "KEPENTINGAN KEJUJURAN",
+        situation: null,
+        question: "Apakah kepentingan bersikap jujur dalam keluarga?",
+        options: [
+          { key: "A", text: "Sukar mempunyai kawan." },
+          { key: "B", text: "Fikiran akan serabut." },
+          { key: "C", text: "Diri akan disayangi dan dipercayai." }
+        ],
+        correct: "C",
+        badgeIcon: "🛡️",
+        badgeName: "Lencana Perisai Kepercayaan",
+        motivation: "“Hebat! Kamu seorang yang jujur!”"
+      },
+      {
+        id: 5,
+        zoneName: "Rumah Omar",
+        zoneEmoji: "🏠",
+        title: "SITUASI OMAR",
+        situation: "Situasi: Omar tidak sengaja memecahkan gelas kaca di ruang makan. Dia berasa takut untuk memberitahu ibu dan ayahnya.",
+        question: "Apakah yang perlu dibuat oleh Omar?",
+        options: [
+          { key: "A", text: "Menyembunyikan serpihan gelas dan berpura-pura tidak tahu." },
+          { key: "B", text: "Mengaku kesalahan dan meminta maaf kepada ibu dan ayah." },
+          { key: "C", text: "Menyalahkan adiknya." }
+        ],
+        correct: "B",
+        badgeIcon: "💎",
+        badgeName: "Lencana Berani Mengaku",
+        motivation: "“Syabas, teruskan misi adiwira!”"
+      },
+      {
+        id: 6,
+        zoneName: "Rumah Alia",
+        zoneEmoji: "🏡",
+        title: "SITUASI ALIA",
+        situation: "Situasi: Alia menjumpai dompet ayahnya, lalu dia mengambil duit dan memasukkan ke dalam poketnya.",
+        question: "Apakah yang perlu dibuat oleh Alia?",
+        options: [
+          { key: "A", text: "Menggunakan duit itu untuk membeli permainan." },
+          { key: "B", text: "Diamkan diri dan belanja duit itu." },
+          { key: "C", text: "Memulangkan kembali dompet kepada ayahnya." }
+        ],
+        correct: "C",
+        badgeIcon: "👑",
+        badgeName: "Lencana Amanah Mulia",
+        motivation: "“Bagus! Kamu semakin hampir dengan harta karun!”"
+      },
+      {
+        id: 7,
+        zoneName: "Tasik Ketenangan",
+        zoneEmoji: "🌊",
+        title: "KESAN BERSIKAP JUJUR",
+        situation: null,
+        question: "Apakah kesan apabila kita bersikap jujur dengan keluarga?",
+        options: [
+          { key: "A", text: "Hati sentiasa tenang dan mudah didekati." },
+          { key: "B", text: "Keluarga tidak percaya." },
+          { key: "C", text: "Menghadapi kemarahan oleh ahli keluarga." }
+        ],
+        correct: "A",
+        badgeIcon: "🕊️",
+        badgeName: "Lencana Jiwa Tenang",
+        motivation: "“Hebat! Kamu seorang yang jujur!”"
+      },
+      {
+        id: 8,
+        zoneName: "Pulau Harta Karun",
+        zoneEmoji: "🏝️",
+        title: "PERASAAN APABILA JUJUR",
+        situation: null,
+        question: "Apakah perasaan kamu setelah bersikap jujur terhadap keluarga?",
+        options: [
+          { key: "A", text: "Berasa tenang dan bahagia." },
+          { key: "B", text: "Rasa sedih." },
+          { key: "C", text: "Diri akan kecewa." }
+        ],
+        correct: "A",
+        badgeIcon: "🏆",
+        badgeName: "Lencana Bahagia Harmoni",
+        motivation: "“Syabas! Semua 8 checkpoint selesai! Buka peti harta karun sekarang!”"
+      }
+    ];
+
+    /* =========================================================================
+       3. KEADAAN PERMAINAN (GAME STATE)
+       ========================================================================= */
+    const gameState = {
+      isPlaying: false,
+      isModalOpen: false,
+      playerName: "Adik Adiwira",
+      score: 0,
+      coins: 0,
+      totalCoins: 50,
+      lives: 5,
+      currentCheckpointIndex: 0, // 0 hingga 7; 8 bermaksud semua selesai -> pergi ke peti
+      treasureOpened: false,
+      earnedBadges: [],
+      hitCooldown: 0
+    };
+
+    /* =========================================================================
+       4. PENYEDIAAN DUNIA 3D THREE.JS
+       ========================================================================= */
+    const container = document.getElementById('game-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x7dd3fc);
+    scene.fog = new THREE.FogExp2(0xbae6fd, 0.0042);
+
+    const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 500);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Pencahayaan Ceria Kartun
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x86efac, 0.85);
+    hemiLight.position.set(0, 80, 0);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+    dirLight.position.set(45, 85, 35);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 10;
+    dirLight.shadow.camera.far = 260;
+    const d = 110;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    scene.add(dirLight);
+
+    /* =========================================================================
+       5. SUSUN ATUR LALUAN 8 KAWASAN & PLATFORMS
+       ========================================================================= */
+    // Laluan lurus ke hadapan (-Z) dengan sedikit variasi mendaki di Bukit Kepercayaan
+    // Setiap zon merangkumi jarak sekitar 32 unit di sepanjang paksi Z
+    const ZONE_CENTERS_Z = [
+      -18,  // CP 1: Hutan Kejujuran
+      -52,  // CP 2: Jambatan Keluarga
+      -86,  // CP 3: Taman Amanah
+      -122, // CP 4: Bukit Kepercayaan (tinggi y = 3.0)
+      -156, // CP 5: Rumah Omar
+      -190, // CP 6: Rumah Alia
+      -224, // CP 7: Tasik Ketenangan
+      -258  // CP 8: Pulau Harta Karun
+    ];
+    const TREASURE_POS = new THREE.Vector3(0, 0.5, -276);
+
+    // Senarai kotak platform & halangan untuk pengesanan ketinggian tanah
+    const platforms = []; // { minX, maxX, minZ, maxZ, topY }
+    const solidBlocks = []; // { minX, maxX, minZ, maxZ, maxY }
+
+    function addPlatform(x, z, w, d, topY, color, hasBorder = false) {
+      const h = Math.max(1.2, topY + 2);
+      const geo = new THREE.BoxGeometry(w, h, d);
+      const mat = new THREE.MeshLambertMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, topY - h / 2, z);
+      mesh.receiveShadow = true;
+      mesh.castShadow = true;
+      scene.add(mesh);
+
+      if (hasBorder) {
+        const borderGeo = new THREE.BoxGeometry(w + 0.4, 0.35, d + 0.4);
+        const borderMat = new THREE.MeshLambertMaterial({ color: 0xfde047 });
+        const border = new THREE.Mesh(borderGeo, borderMat);
+        border.position.set(x, topY - 0.15, z);
+        border.receiveShadow = true;
+        scene.add(border);
+      }
+
+      platforms.push({
+        minX: x - w / 2,
+        maxX: x + w / 2,
+        minZ: z - d / 2,
+        maxZ: z + d / 2,
+        topY
+      });
+      return mesh;
+    }
+
+    // Lautan / Tasik biru berkilauan di bawah
+    const waterGeo = new THREE.PlaneGeometry(500, 600);
+    const waterMat = new THREE.MeshLambertMaterial({ color: 0x0ea5e9 });
+    const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+    waterMesh.rotation.x = -Math.PI / 2;
+    waterMesh.position.set(0, -1.6, -150);
+    scene.add(waterMesh);
+
+    // 1. KAWASAN 1: HUTAN KEJUJURAN (Z: 10 hingga -34)
+    addPlatform(0, -12, 34, 44, 0, 0x4ade80);
+    addPlatform(0, -12, 6, 44, 0.05, 0xfde68a); // Laluan pasir
+
+    // 2. KAWASAN 2: JAMBATAN KELUARGA (Z: -34 hingga -66)
+    // Batu loncatan sebelum jambatan (menguji lompatan)
+    addPlatform(-2.2, -36, 3.6, 3.6, 0.4, 0xfbbf24, true);
+    addPlatform(2.2, -40, 3.6, 3.6, 0.65, 0xf59e0b, true);
+    // Jambatan kayu sempit sedikit merentasi sungai biru
+    addPlatform(0, -49, 6.2, 16, 0.45, 0xb45309, true);
+    // Tiang & pagar jambatan kayu
+    for (let bz = -42; bz >= -56; bz -= 4.5) {
+      [-2.9, 2.9].forEach(bx => {
+        const post = new THREE.Mesh(
+          new THREE.BoxGeometry(0.45, 1.8, 0.45),
+          new THREE.MeshLambertMaterial({ color: 0x78350f })
+        );
+        post.position.set(bx, 1.15, bz);
+        post.castShadow = true;
+        scene.add(post);
+      });
+    }
+    [-2.9, 2.9].forEach(bx => {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.25, 15.5),
+        new THREE.MeshLambertMaterial({ color: 0x92400e })
+      );
+      rail.position.set(bx, 1.8, -49);
+      scene.add(rail);
+    });
+    // Dataran selepas jambatan (CP 2)
+    addPlatform(0, -61, 28, 14, 0, 0x4ade80);
+
+    // 3. KAWASAN 3: TAMAN AMANAH (Z: -68 hingga -100)
+    addPlatform(0, -84, 34, 32, 0, 0x86efac);
+    addPlatform(0, -84, 6.5, 32, 0.05, 0xfef08a);
+    // Halangan kecil kayu balak & batu taman (boleh dilompat)
+    function createLowObstacle(x, z, w, h, d, color) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshLambertMaterial({ color })
+      );
+      mesh.position.set(x, h / 2, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      platforms.push({
+        minX: x - w / 2,
+        maxX: x + w / 2,
+        minZ: z - d / 2,
+        maxZ: z + d / 2,
+        topY: h
+      });
+    }
+    createLowObstacle(0, -75, 5.5, 0.85, 1.2, 0xa16207); // Balak kayu kecil
+    // 4. KAWASAN 4: BUKIT KEPERCAYAAN (Z: -100 hingga -136) - Kawasan berbukit & batu loncatan mencabar!
+    addPlatform(0, -103, 22, 8, 0.9, 0x22c55e);
+    // Batu loncatan bertingkat mendaki bukit
+    addPlatform(-3.2, -109.5, 5.2, 4.5, 1.85, 0x16a34a, true);
+    addPlatform(3.2, -114.2, 5.2, 4.5, 2.4, 0x15803d, true);
+    addPlatform(0, -121.5, 24, 13, 2.8, 0x4ade80); // Puncak Bukit (CP 4 di z = -122, y = 2.8)
+    addPlatform(0, -132, 20, 9, 1.4, 0x22c55e);
+
+    // 5. KAWASAN 5: RUMAH OMAR (Z: -136 hingga -170)
+    addPlatform(0, -153, 34, 34, 0, 0xfef3c7);
+    // Lantai & Dinding Rumah Omar (terbuka di atas/hadapan supaya kamera jelas)
+    addPlatform(0, -155, 18, 16, 0.2, 0xfde68a, true);
+    // Dinding belakang & sisi Rumah Omar
+    const omarWallMat = new THREE.MeshLambertMaterial({ color: 0xfb923c });
+    const omarWallL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.5, 15), omarWallMat);
+    omarWallL.position.set(-8.8, 2.8, -155);
+    scene.add(omarWallL);
+    const omarWallR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.5, 15), omarWallMat);
+    omarWallR.position.set(8.8, 2.8, -155);
+    scene.add(omarWallR);
+    // Meja Makan Omar + Serpihan Gelas Kaca
+    const tableMat = new THREE.MeshLambertMaterial({ color: 0x92400e });
+    const tableTop = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.3, 2.4), tableMat);
+    tableTop.position.set(-4.5, 1.5, -154);
+    tableTop.castShadow = true;
+    scene.add(tableTop);
+    [[-6.2, -154.9], [-2.8, -154.9], [-6.2, -153.1], [-2.8, -153.1]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.4, 0.25), tableMat);
+      leg.position.set(lx, 0.7, lz);
+      scene.add(leg);
+    });
+    // Serpihan gelas kaca biru berkilau di atas & tepi meja
+    const glassMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8, shininess: 100, transparent: true, opacity: 0.85 });
+    for (let g = 0; g < 7; g++) {
+      const shard = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.45, 4), glassMat);
+      shard.position.set(-4.5 + (Math.random() - 0.5) * 2.5, g < 3 ? 1.75 : 0.35, -154 + (Math.random() - 0.5) * 1.8);
+      shard.rotation.set(Math.random() * 2, Math.random() * 2, Math.random() * 2);
+      scene.add(shard);
+    }
+
+    // 6. KAWASAN 6: RUMAH ALIA (Z: -170 hingga -204)
+    addPlatform(0, -187, 34, 34, 0, 0xe0e7ff);
+    addPlatform(0, -189, 18, 16, 0.2, 0xc7d2fe, true);
+    const aliaWallMat = new THREE.MeshLambertMaterial({ color: 0xf472b6 });
+    const aliaWallL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.5, 15), aliaWallMat);
+    aliaWallL.position.set(-8.8, 2.8, -189);
+    scene.add(aliaWallL);
+    const aliaWallR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.5, 15), aliaWallMat);
+    aliaWallR.position.set(8.8, 2.8, -189);
+    scene.add(aliaWallR);
+    // Meja Kecil Alia dengan Dompet Ayah & Duit
+    const aliaTable = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.3, 2.0), new THREE.MeshLambertMaterial({ color: 0x7c2d12 }));
+    aliaTable.position.set(4.5, 0.75, -188);
+    aliaTable.castShadow = true;
+    scene.add(aliaTable);
+    const walletMesh = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 0.65), new THREE.MeshLambertMaterial({ color: 0x451a03 }));
+    walletMesh.position.set(4.3, 1.5, -188);
+    scene.add(walletMesh);
+    const moneyMesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, 0.35), new THREE.MeshLambertMaterial({ color: 0x22c55e }));
+    moneyMesh.position.set(4.8, 1.48, -187.8);
+    moneyMesh.rotation.y = 0.4;
+    scene.add(moneyMesh);
+
+    // 7. KAWASAN 7: TASIK KETENANGAN (Z: -204 hingga -238)
+    addPlatform(0, -221, 36, 34, 0, 0xa7f3d0);
+    // Kolam tasik bercahaya di kiri dan kanan laluan
+    const glowingLakeGeo = new THREE.CircleGeometry(11, 24);
+    const glowingLakeMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+    const lakeLeft = new THREE.Mesh(glowingLakeGeo, glowingLakeMat);
+    lakeLeft.rotation.x = -Math.PI / 2;
+    lakeLeft.position.set(-10.5, 0.08, -221);
+    scene.add(lakeLeft);
+    const lakeRight = new THREE.Mesh(glowingLakeGeo, glowingLakeMat);
+    lakeRight.rotation.x = -Math.PI / 2;
+    lakeRight.position.set(10.5, 0.08, -221);
+    scene.add(lakeRight);
+    // Laluan pelantar kayu di tengah Tasik Ketenangan
+    addPlatform(0, -221, 7.5, 34, 0.3, 0xd97706, true);
+
+    // 8. KAWASAN 8: PULAU HARTA KARUN (Z: -238 hingga -288)
+    addPlatform(0, -242, 4.8, 7, 0.45, 0xb45309, true); // Jambatan pertama ke pulau
+    addPlatform(0, -248.5, 4.6, 5.5, 0.65, 0xd97706, true); // Pelantar loncatan ke pulau
+    addPlatform(0, -268, 36, 38, 0.4, 0xfde047, true); // Pantai pasir emas pulau
+    addPlatform(0, -274, 16, 14, 0.7, 0xfbbf24, true); // Pentas Harta Karun
+
+    /* =========================================================================
+       5B. HALANGAN DINAMIK MENCABAR (KAYU BALAK BERGULING & DURI KRISTAL)
+       ========================================================================= */
+    const movingObstacles = []; // { mesh, type, baseX, baseY, baseZ, rangeX, speed, phase, radius }
+
+    function createRollingLog(x, y, z, rangeX, speed, phase = 0) {
+      const logGroup = new THREE.Group();
+      const logGeo = new THREE.CylinderGeometry(0.68, 0.68, 3.4, 12);
+      const logMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+      const logMesh = new THREE.Mesh(logGeo, logMat);
+      logMesh.rotation.z = Math.PI / 2;
+      logMesh.castShadow = true;
+      logGroup.add(logMesh);
+
+      // Jalur gelang kayu kuning supaya jelas kelihatan
+      [-1.1, 1.1].forEach(ox => {
+        const ring = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.72, 0.72, 0.25, 12),
+          new THREE.MeshLambertMaterial({ color: 0xf59e0b })
+        );
+        ring.rotation.z = Math.PI / 2;
+        ring.position.x = ox;
+        logGroup.add(ring);
+      });
+
+      logGroup.position.set(x, y + 0.68, z);
+      scene.add(logGroup);
+      movingObstacles.push({
+        mesh: logGroup,
+        spinMesh: logMesh,
+        type: 'log',
+        baseX: x,
+        baseY: y + 0.68,
+        baseZ: z,
+        rangeX,
+        speed,
+        phase,
+        hitRadiusX: 1.85,
+        hitRadiusZ: 0.85,
+        hitHeight: 1.35
+      });
+    }
+
+    function createCrystalSpike(x, y, z, rangeX = 0, speed = 0, phase = 0) {
+      const spikeGroup = new THREE.Group();
+      const spikeMat = new THREE.MeshPhongMaterial({
+        color: 0xf43f5e,
+        emissive: 0xbe123c,
+        emissiveIntensity: 0.45,
+        shininess: 90
+      });
+      [-0.75, 0, 0.75].forEach((sx, idx) => {
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.42, idx === 1 ? 1.45 : 1.15, 6), spikeMat);
+        cone.position.set(sx, (idx === 1 ? 1.45 : 1.15) / 2, 0);
+        cone.castShadow = true;
+        spikeGroup.add(cone);
+      });
+      spikeGroup.position.set(x, y, z);
+      scene.add(spikeGroup);
+
+      movingObstacles.push({
+        mesh: spikeGroup,
+        type: 'spike',
+        baseX: x,
+        baseY: y,
+        baseZ: z,
+        rangeX,
+        speed,
+        phase,
+        hitRadiusX: 1.25,
+        hitRadiusZ: 0.75,
+        hitHeight: 1.35
+      });
+    }
+
+    // Halangan mencabar di laluan-laluan utama:
+    createRollingLog(0, 0, -78, 5.5, 2.3, 0);          // Taman Amanah: balak berguling melintang
+    createRollingLog(0, 0, -93, 6.0, 2.8, 1.8);        // Taman Amanah: balak kedua lebih laju
+    createRollingLog(0, 2.8, -118.2, 6.5, 2.5, 0.7);   // Puncak Bukit Kepercayaan
+    createCrystalSpike(-2.2, 0.2, -146, 0, 0, 0);      // Halaman Rumah Omar
+    createCrystalSpike(2.2, 0.2, -180, 0, 0, 0);       // Halaman Rumah Alia
+    createCrystalSpike(0, 0.3, -213, 2.5, 2.2, 0.4);   // Pelantar Tasik Ketenangan (bergerak kiri-kanan)
+    createCrystalSpike(0, 0.3, -231, 2.5, 2.5, 2.2);   // Pelantar Tasik Ketenangan 2
+    createRollingLog(0, 0.4, -254, 6.5, 3.0, 1.1);     // Pintu masuk Pulau Harta Karun
+
+    /* =========================================================================
+       5C. SYILING EMAS 3D (COINS) DI SEPANJANG 8 ZON LALUAN
+       ========================================================================= */
+    const coinObjects = [];
+    const coinGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.18, 16);
+    const coinMat = new THREE.MeshPhongMaterial({
+      color: 0xfacc15,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.45,
+      shininess: 120
+    });
+
+    function spawnCoin(x, y, z) {
+      const coin = new THREE.Mesh(coinGeo, coinMat);
+      coin.rotation.z = Math.PI / 2;
+      coin.position.set(x, y, z);
+      coin.castShadow = true;
+      scene.add(coin);
+      coinObjects.push({ mesh: coin, baseY: y, collected: false });
+    }
+
+    // Susun tepat 50 syiling emas di sepanjang 8 zon pengembaraan (termasuk lengkungan lompatan!)
+    const coinCoords = [
+      // Zon 1: Hutan Kejujuran (6 syiling)
+      [0, 1.1, -2], [0, 1.1, -6], [0, 1.1, -10], [-2.5, 1.1, -14], [2.5, 1.1, -14], [0, 1.1, -26],
+      // Zon 2: Jambatan Keluarga & Batu Loncatan (7 syiling)
+      [-2.2, 1.6, -36], [2.2, 1.85, -40], [0, 1.55, -44], [0, 1.55, -48], [0, 1.55, -52], [-2.2, 1.1, -58], [2.2, 1.1, -58],
+      // Zon 3: Taman Amanah - lengkungan syiling di atas halangan! (7 syiling)
+      [0, 2.3, -75], [0, 2.5, -78], [0, 2.4, -81], [-3, 1.1, -84], [3, 1.1, -84], [0, 2.3, -93], [0, 1.1, -96],
+      // Zon 4: Bukit Kepercayaan - mendaki batu loncatan (7 syiling)
+      [0, 2.0, -103], [-3.2, 3.0, -109.5], [3.2, 3.55, -114.2], [0, 4.9, -118.2], [-3.5, 3.9, -121], [3.5, 3.9, -121], [0, 2.5, -132],
+      // Zon 5: Rumah Omar (6 syiling)
+      [2.2, 1.3, -146], [-2.5, 1.3, -150], [2.5, 1.3, -150], [-2.5, 1.3, -158], [2.5, 1.3, -158], [0, 1.3, -164],
+      // Zon 6: Rumah Alia (6 syiling)
+      [-2.2, 1.3, -180], [-2.5, 1.3, -185], [2.5, 1.3, -185], [-2.5, 1.3, -193], [2.5, 1.3, -193], [0, 1.3, -198],
+      // Zon 7: Tasik Ketenangan (6 syiling)
+      [0, 1.4, -209], [0, 2.4, -213], [-1.8, 1.4, -218], [1.8, 1.4, -218], [0, 2.4, -231], [0, 1.4, -235],
+      // Zon 8: Pulau Harta Karun (5 syiling)
+      [0, 1.6, -242], [0, 2.1, -248.5], [0, 2.5, -254], [-3.2, 1.5, -264], [3.2, 1.5, -264]
+    ];
+    coinCoords.forEach(([cx, cy, cz]) => spawnCoin(cx, cy, cz));
+    gameState.totalCoins = coinObjects.length;
+
+    /* =========================================================================
+       6. HIASAN ALAM FANTASI (POKOK, BUNGA, BATU, KRISTAL & AWAN)
+       ========================================================================= */
+    const crystalObjs = [];
+    const clouds = [];
+
+    function createCartoonTree(x, y, z, scale = 1, foliageColor = 0x22c55e) {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35 * scale, 0.5 * scale, 2.2 * scale, 8),
+        new THREE.MeshLambertMaterial({ color: 0x78350f })
+      );
+      trunk.position.y = 1.1 * scale;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      const crown1 = new THREE.Mesh(
+        new THREE.SphereGeometry(1.5 * scale, 12, 12),
+        new THREE.MeshLambertMaterial({ color: foliageColor })
+      );
+      crown1.position.y = 2.8 * scale;
+      crown1.castShadow = true;
+      tree.add(crown1);
+
+      const crown2 = new THREE.Mesh(
+        new THREE.SphereGeometry(1.1 * scale, 10, 10),
+        new THREE.MeshLambertMaterial({ color: 0x4ade80 })
+      );
+      crown2.position.set(0.6 * scale, 3.5 * scale, 0.3 * scale);
+      tree.add(crown2);
+
+      tree.position.set(x, y, z);
+      scene.add(tree);
+    }
+
+    function createFlower(x, y, z, color) {
+      const flower = new THREE.Group();
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.6, 6),
+        new THREE.MeshLambertMaterial({ color: 0x16a34a })
+      );
+      stem.position.y = 0.3;
+      flower.add(stem);
+
+      const head = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.28, 0),
+        new THREE.MeshLambertMaterial({ color })
+      );
+      head.position.y = 0.65;
+      flower.add(head);
+
+      flower.position.set(x, y, z);
+      scene.add(flower);
+    }
+
+    // Pokok & bunga di sepanjang pengembaraan
+    const treePlacements = [
+      [-11, 0, -4, 1.1, 0x16a34a], [11, 0, -6, 1.2, 0x22c55e],
+      [-12, 0, -22, 1.0, 0x15803d], [12, 0, -25, 1.3, 0x22c55e],
+      [-10, 0, -62, 1.1, 0x22c55e], [10, 0, -60, 1.0, 0x16a34a],
+      [-12, 0, -76, 1.2, 0x16a34a], [12, 0, -90, 1.1, 0x22c55e],
+      [-9, 2.8, -122, 1.0, 0x15803d], [9, 2.8, -122, 1.0, 0x22c55e],
+      [-13, 0, -144, 1.1, 0x22c55e], [13, 0, -162, 1.1, 0x16a34a],
+      [-13, 0, -178, 1.1, 0x22c55e], [13, 0, -196, 1.1, 0x16a34a],
+      [-14, 0.4, -264, 1.3, 0x16a34a], [14, 0.4, -270, 1.2, 0x22c55e]
+    ];
+    treePlacements.forEach(([tx, ty, tz, sc, col]) => createCartoonTree(tx, ty, tz, sc, col));
+
+    const flowerColors = [0xf43f5e, 0xfacc15, 0xa855f7, 0xf97316, 0xec4899];
+    for (let i = 0; i < 42; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const fx = side * (4.2 + Math.random() * 8.5);
+      const fz = -Math.random() * 270;
+      if ((fz < -35 && fz > -57) || (fz < -100 && fz > -135) || (fz < -205 && fz > -252)) continue;
+      createFlower(fx, 0, fz, flowerColors[i % flowerColors.length]);
+    }
+
+    // Kristal bercahaya di Tasik Ketenangan
+    [-6.5, 6.5, -14.5, 14.5].forEach((cx, idx) => {
+      const crystal = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.95, 0),
+        new THREE.MeshPhongMaterial({
+          color: 0x38bdf8,
+          emissive: 0x0284c7,
+          emissiveIntensity: 0.55,
+          shininess: 100
+        })
+      );
+      crystal.position.set(cx, 1.1, -214 - (idx % 2) * 14);
+      scene.add(crystal);
+      crystalObjs.push(crystal);
+    });
+
+    // Awan kartun gebu di langit
+    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    for (let c = 0; c < 18; c++) {
+      const cloudGroup = new THREE.Group();
+      [0, 1.6, -1.5].forEach((ox, idx) => {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(idx === 0 ? 2.4 : 1.7, 10, 10), cloudMat);
+        puff.position.set(ox, idx === 0 ? 0.3 : 0, 0);
+        cloudGroup.add(puff);
+      });
+      cloudGroup.position.set((Math.random() - 0.5) * 130, 26 + Math.random() * 10, -c * 17 + 10);
+      scene.add(cloudGroup);
+      clouds.push(cloudGroup);
+    }
+
+    /* =========================================================================
+       7. PENANDA 8 CHECKPOINT (BINTANG EMAS) & PINTU HALANGAN AJAIB
+       ========================================================================= */
+    const checkpointMeshes = [];
+    const barrierMeshes = [];
+
+    function createStarGeometry(outerR = 1.45, innerR = 0.65, depth = 0.45) {
+      const shape = new THREE.Shape();
+      const spikes = 5;
+      for (let i = 0; i < spikes * 2; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const angle = (i * Math.PI) / spikes - Math.PI / 2;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) shape.moveTo(x, y);
+        else shape.lineTo(x, y);
+      }
+      shape.closePath();
+      const extrudeSettings = { depth, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.08, bevelThickness: 0.08 };
+      const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geo.center();
+      return geo;
+    }
+
+    const starGeometry = createStarGeometry();
+
+    ZONE_CENTERS_Z.forEach((zPos, idx) => {
+      const groundY = idx === 3 ? 2.8 : (idx === 6 ? 0.3 : (idx === 7 ? 0.4 : (idx === 4 || idx === 5 ? 0.2 : 0)));
+      const cpGroup = new THREE.Group();
+
+      const starMat = new THREE.MeshPhongMaterial({
+        color: 0xfacc15,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.55,
+        shininess: 120
+      });
+      const starMesh = new THREE.Mesh(starGeometry, starMat);
+      starMesh.castShadow = true;
+      cpGroup.add(starMesh);
+
+      // Gelang cahaya tapak checkpoint
+      const ringGeo = new THREE.RingGeometry(1.5, 2.1, 24);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = -Math.PI / 2;
+      ringMesh.position.y = -1.75;
+      cpGroup.add(ringMesh);
+
+      cpGroup.position.set(0, groundY + 1.9, zPos);
+      scene.add(cpGroup);
+      checkpointMeshes.push({ group: cpGroup, star: starMesh, ring: ringMesh, baseY: groundY + 1.9, solved: false });
+
+      // Pintu Halangan Ajaib selepas setiap checkpoint (menghalang pemain melangkau checkpoint!)
+      const barrierZ = zPos - 5.5;
+      const barrierGroup = new THREE.Group();
+      const barrierGeo = new THREE.BoxGeometry(16, 5.2, 0.8);
+      const barrierMat = new THREE.MeshPhongMaterial({
+        color: 0x3b82f6,
+        emissive: 0x1d4ed8,
+        emissiveIntensity: 0.45,
+        transparent: true,
+        opacity: 0.68
+      });
+      const barrierWall = new THREE.Mesh(barrierGeo, barrierMat);
+      barrierWall.position.y = 2.6;
+      barrierGroup.add(barrierWall);
+
+      // Tiang batu gerbang di kiri dan kanan
+      [-8.2, 8.2].forEach(px => {
+        const pillar = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 6.0, 1.4),
+          new THREE.MeshLambertMaterial({ color: 0xf59e0b })
+        );
+        pillar.position.set(px, 3.0, 0);
+        pillar.castShadow = true;
+        barrierGroup.add(pillar);
+      });
+
+      barrierGroup.position.set(0, groundY, barrierZ);
+      scene.add(barrierGroup);
+      barrierMeshes.push({ group: barrierGroup, z: barrierZ, open: false, targetY: groundY - 7 });
+    });
+
+    /* =========================================================================
+       8. PETI HARTA KARUN EMAS BESAR DI PULAU HARTA KARUN
+       ========================================================================= */
+    const treasureGroup = new THREE.Group();
+    const chestBase = new THREE.Mesh(
+      new THREE.BoxGeometry(4.4, 2.2, 3.0),
+      new THREE.MeshPhongMaterial({ color: 0xb45309, shininess: 60 })
+    );
+    chestBase.position.y = 1.1;
+    chestBase.castShadow = true;
+    treasureGroup.add(chestBase);
+
+    // Jalur emas pada peti
+    const goldTrimMat = new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.4, shininess: 120 });
+    [-1.9, 0, 1.9].forEach(tx => {
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.3, 3.15), goldTrimMat);
+      trim.position.set(tx, 1.1, 0);
+      treasureGroup.add(trim);
+    });
+
+    // Penutup peti harta karun (berengsel di belakang supaya boleh terbuka ke atas!)
+    const lidPivot = new THREE.Group();
+    lidPivot.position.set(0, 2.2, -1.5);
+    const chestLid = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.5, 1.5, 4.4, 14, 1, false, 0, Math.PI),
+      goldTrimMat
+    );
+    chestLid.rotation.z = Math.PI / 2;
+    chestLid.rotation.y = Math.PI / 2;
+    chestLid.position.set(0, 0, 1.5);
+    lidPivot.add(chestLid);
+    treasureGroup.add(lidPivot);
+
+    // Cahaya emas di dalam peti
+    const chestGlow = new THREE.PointLight(0xfef08a, 0, 22);
+    chestGlow.position.set(0, 3.0, 0);
+    treasureGroup.add(chestGlow);
+
+    treasureGroup.position.copy(TREASURE_POS);
+    scene.add(treasureGroup);
+
+    /* =========================================================================
+       9. WATAK ADIWIRA KANAK-KANAK COMEL 3D
+       ========================================================================= */
+    const hero = new THREE.Group();
+
+    // Badan baju biru adiwira
+    const torso = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 0.65, 1.25, 12),
+      new THREE.MeshLambertMaterial({ color: 0x2563eb })
+    );
+    torso.position.y = 1.35;
+    torso.castShadow = true;
+    hero.add(torso);
+
+    // Lambang bintang kuning di dada
+    const chestStar = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.26, 0),
+      new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+    );
+    chestStar.position.set(0, 1.48, -0.58);
+    hero.add(chestStar);
+
+    // Tali pinggang emas
+    const belt = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.67, 0.67, 0.22, 12),
+      new THREE.MeshLambertMaterial({ color: 0xfacc15 })
+    );
+    belt.position.y = 0.82;
+    hero.add(belt);
+
+    // Kepala comel
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.68, 16, 16),
+      new THREE.MeshLambertMaterial({ color: 0xfed7aa })
+    );
+    head.position.y = 2.55;
+    head.castShadow = true;
+    hero.add(head);
+
+    // Rambut coklat bergaya adiwira
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.72, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      new THREE.MeshLambertMaterial({ color: 0x451a03 })
+    );
+    hair.position.set(0, 2.66, 0.06);
+    hair.rotation.x = 0.22;
+    hero.add(hair);
+
+    // Topeng mata adiwira merah
+    const mask = new THREE.Mesh(
+      new THREE.BoxGeometry(1.05, 0.26, 0.35),
+      new THREE.MeshLambertMaterial({ color: 0xef4444 })
+    );
+    mask.position.set(0, 2.58, -0.54);
+    hero.add(mask);
+
+    // Mata bersinar comel
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+    [-0.24, 0.24].forEach(ex => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), eyeMat);
+      eye.position.set(ex, 2.58, -0.68);
+      hero.add(eye);
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+      pupil.position.set(ex, 2.58, -0.77);
+      hero.add(pupil);
+    });
+
+    // Jubah Adiwira Merah berkibar di belakang (+Z pada koordinat tempatan watak)
+    const capePivot = new THREE.Group();
+    capePivot.position.set(0, 1.9, 0.52);
+    const capeMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.15, 1.45, 0.08),
+      new THREE.MeshLambertMaterial({ color: 0xdc2626 })
+    );
+    capeMesh.position.set(0, -0.7, 0.12);
+    capeMesh.rotation.x = -0.22;
+    capeMesh.castShadow = true;
+    capePivot.add(capeMesh);
+    hero.add(capePivot);
+
+    // Lengan kiri & kanan
+    function createLimb(color, w, h) {
+      const pivot = new THREE.Group();
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(w, w * 0.9, h, 8),
+        new THREE.MeshLambertMaterial({ color })
+      );
+      mesh.position.y = -h / 2;
+      mesh.castShadow = true;
+      pivot.add(mesh);
+      return pivot;
+    }
+
+    const leftArm = createLimb(0x3b82f6, 0.18, 0.85);
+    leftArm.position.set(-0.74, 1.85, 0);
+    hero.add(leftArm);
+
+    const rightArm = createLimb(0x3b82f6, 0.18, 0.85);
+    rightArm.position.set(0.74, 1.85, 0);
+    hero.add(rightArm);
+
+    // Kaki kiri & kanan
+    const leftLeg = createLimb(0x1e3a8a, 0.21, 0.78);
+    leftLeg.position.set(-0.3, 0.78, 0);
+    hero.add(leftLeg);
+
+    const rightLeg = createLimb(0x1e3a8a, 0.21, 0.78);
+    rightLeg.position.set(0.3, 0.78, 0);
+    hero.add(rightLeg);
+
+    hero.position.set(0, 0, 4);
+    scene.add(hero);
+
+    // Fizik & Pergerakan Watak
+    const playerPhysics = {
+      velocity: new THREE.Vector3(),
+      onGround: true,
+      walkCycle: 0,
+      facingAngle: 0 // 0 menghadap -Z
+    };
+
+    /* =========================================================================
+       10. SISTEM ZARAH (BINTANG, DEBU LARI & SYILING EMAS HARTA KARUN)
+       ========================================================================= */
+    const particles = [];
+    const particleGeo = new THREE.OctahedronGeometry(0.24, 0);
+
+    function spawnParticles(pos, count, colors, speedScale = 1, isCoin = false) {
+      for (let i = 0; i < count; i++) {
+        const col = colors[i % colors.length];
+        const geo = isCoin ? new THREE.CylinderGeometry(0.35, 0.35, 0.1, 12) : particleGeo;
+        const mat = new THREE.MeshBasicMaterial({ color: col });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(pos);
+        if (isCoin) mesh.rotation.x = Math.PI / 2;
+        scene.add(mesh);
+
+        const angle = Math.random() * Math.PI * 2;
+        const horizSpeed = (1.5 + Math.random() * 5.5) * speedScale;
+        particles.push({
+          mesh,
+          vel: new THREE.Vector3(
+            Math.cos(angle) * horizSpeed,
+            (4.5 + Math.random() * 6.5) * speedScale,
+            Math.sin(angle) * horizSpeed
+          ),
+          life: 1.0 + Math.random() * 0.7,
+          isCoin
+        });
+      }
+    }
+
+    /* =========================================================================
+       11. KAWALAN INPUT (PAPAN KEKUNCI + JOYSTICK SENTUH)
+       ========================================================================= */
+    const keys = {
+      up: false,
+      down: false,
+      left: false,
+      right: false,
+      sprint: false
+    };
+
+    const joyInput = { x: 0, y: 0 };
+
+    function triggerJump() {
+      if (!gameState.isPlaying || gameState.isModalOpen) return;
+      if (playerPhysics.onGround) {
+        playerPhysics.velocity.y = 12.2;
+        playerPhysics.onGround = false;
+        sound.playJump();
+        spawnParticles(hero.position, 6, [0xffffff, 0xfef08a], 0.45);
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = true;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.sprint = true;
+      if (e.code === 'Space') {
+        if (gameState.isPlaying && !gameState.isModalOpen) {
+          e.preventDefault();
+          triggerJump();
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.sprint = false;
+    });
+
+    // Joystick Maya Sentuh
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickKnob = document.getElementById('joystick-knob');
+    let joyTouchId = null;
+
+    function updateJoystick(clientX, clientY) {
+      const rect = joystickZone.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const maxRadius = rect.width * 0.36;
+
+      let dx = clientX - centerX;
+      let dy = clientY - centerY;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > maxRadius) {
+        dx = (dx / dist) * maxRadius;
+        dy = (dy / dist) * maxRadius;
+      }
+
+      joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      joyInput.x = dx / maxRadius;
+      joyInput.y = dy / maxRadius;
+    }
+
+    function resetJoystick() {
+      joyTouchId = null;
+      joyInput.x = 0;
+      joyInput.y = 0;
+      joystickKnob.style.transform = 'translate(-50%, -50%)';
+    }
+
+    joystickZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      joyTouchId = touch.identifier;
+      updateJoystick(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    joystickZone.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+          updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+        }
+      }
+    }, { passive: false });
+
+    joystickZone.addEventListener('touchend', (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) resetJoystick();
+      }
+    });
+    joystickZone.addEventListener('touchcancel', resetJoystick);
+
+    // Butang Lompat & Lari Sentuh
+    const btnJump = document.getElementById('btn-jump');
+    const btnSprint = document.getElementById('btn-sprint');
+
+    btnJump.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      btnJump.classList.add('active');
+      triggerJump();
+    }, { passive: false });
+    btnJump.addEventListener('touchend', () => btnJump.classList.remove('active'));
+    btnJump.addEventListener('mousedown', () => triggerJump());
+
+    btnSprint.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      btnSprint.classList.add('active');
+      keys.sprint = true;
+    }, { passive: false });
+    btnSprint.addEventListener('touchend', () => {
+      btnSprint.classList.remove('active');
+      keys.sprint = false;
+    });
+    btnSprint.addEventListener('mousedown', () => { keys.sprint = true; });
+    btnSprint.addEventListener('mouseup', () => { keys.sprint = false; });
+
+    /* =========================================================================
+       12. LOGIK KUIZ CHECKPOINT, GANJARAN & PENAMAT
+       ========================================================================= */
+    const hudEl = document.getElementById('hud');
+    const touchControlsEl = document.getElementById('touch-controls');
+    const startScreenEl = document.getElementById('start-screen');
+    const quizModalEl = document.getElementById('quiz-modal');
+    const rewardModalEl = document.getElementById('reward-modal');
+    const victoryScreenEl = document.getElementById('victory-screen');
+    const toastEl = document.getElementById('toast-banner');
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), 2800);
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-player-name').textContent = gameState.playerName;
+      document.getElementById('hud-score').textContent = gameState.score;
+      document.getElementById('hud-coins').textContent = gameState.coins;
+      document.getElementById('hud-coins-total').textContent = gameState.totalCoins;
+      document.getElementById('hud-cp-text').textContent = `${gameState.currentCheckpointIndex} / 8`;
+      document.getElementById('hud-progress-fill').style.width = `${(gameState.currentCheckpointIndex / 8) * 100}%`;
+
+      const heartsContainer = document.getElementById('hud-hearts');
+      heartsContainer.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const span = document.createElement('span');
+        span.textContent = '❤️';
+        if (i >= gameState.lives) span.className = 'heart-lost';
+        heartsContainer.appendChild(span);
+      }
+
+      const zoneBanner = document.getElementById('hud-zone-banner');
+      if (gameState.currentCheckpointIndex < 8) {
+        const cp = CHECKPOINTS_DATA[gameState.currentCheckpointIndex];
+        zoneBanner.textContent = `${cp.zoneEmoji} Kawasan ${cp.id}: ${cp.zoneName}`;
+      } else {
+        zoneBanner.textContent = `🏆 Pulau Harta Karun: Sentuh Peti Emas!`;
+      }
+    }
+
+    function openCheckpointQuiz(index) {
+      gameState.isModalOpen = true;
+      keys.up = keys.down = keys.left = keys.right = keys.sprint = false;
+      resetJoystick();
+      sound.playCheckpointTrigger();
+
+      const data = CHECKPOINTS_DATA[index];
+      document.getElementById('quiz-cp-badge').textContent = `⭐ CHECKPOINT ${data.id} / 8`;
+      document.getElementById('quiz-zone-badge').textContent = `${data.zoneEmoji} ${data.zoneName}`;
+      document.getElementById('quiz-title').textContent = data.title;
+
+      const sitBox = document.getElementById('quiz-situation');
+      if (data.situation) {
+        sitBox.textContent = data.situation;
+        sitBox.classList.remove('hidden');
+      } else {
+        sitBox.classList.add('hidden');
+      }
+
+      document.getElementById('quiz-question').textContent = data.question;
+      const feedbackEl = document.getElementById('quiz-feedback');
+      feedbackEl.classList.add('hidden');
+
+      const optionsContainer = document.getElementById('quiz-options');
+      optionsContainer.innerHTML = '';
+
+      data.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'option-btn';
+        btn.innerHTML = `
+          <span class="option-letter">${opt.key}</span>
+          <span>${opt.text}</span>
+        `;
+        btn.addEventListener('click', () => handleAnswerSelection(opt.key, btn, data));
+        optionsContainer.appendChild(btn);
+      });
+
+      quizModalEl.classList.remove('hidden');
+    }
+
+    function handleAnswerSelection(selectedKey, btnEl, data) {
+      const feedbackEl = document.getElementById('quiz-feedback');
+
+      if (selectedKey === data.correct) {
+        // Jawapan Betul!
+        btnEl.classList.add('correct-glow');
+        sound.playCorrect();
+
+        // Kunci semua butang seketika
+        const allBtns = document.querySelectorAll('#quiz-options .option-btn');
+        allBtns.forEach(b => b.disabled = true);
+
+        const idx = gameState.currentCheckpointIndex;
+        checkpointMeshes[idx].solved = true;
+        checkpointMeshes[idx].star.material.color.setHex(0x22c55e);
+        checkpointMeshes[idx].star.material.emissive.setHex(0x16a34a);
+        barrierMeshes[idx].open = true; // Buka pintu halangan ke checkpoint seterusnya!
+
+        spawnParticles(checkpointMeshes[idx].group.position, 28, [0xfacc15, 0x22c55e, 0x38bdf8, 0xf43f5e], 1.2);
+
+        gameState.score += 10;
+        gameState.earnedBadges.push({ icon: data.badgeIcon, name: data.badgeName });
+        gameState.currentCheckpointIndex++;
+        updateHUD();
+
+        // Suara pujian Bahasa Melayu selepas menjawab betul
+        const cleanMotivation = data.motivation.replace(/[“”]/g, '');
+        sound.speak(`Syabas ${gameState.playerName}! Jawapan kamu tepat! ${cleanMotivation}`);
+
+        setTimeout(() => {
+          quizModalEl.classList.add('hidden');
+          showRewardModal(data);
+        }, 550);
+      } else {
+        // Jawapan Salah - Beri maklum balas, suara galakan & peluang mencuba semula
+        sound.playWrong();
+        sound.speak("Alamak, jawapan itu kurang tepat. Cuba fikirkan semula nilai kejujuran dalam keluarga dan pilih lagi ya!");
+        btnEl.classList.remove('wrong-shake');
+        void btnEl.offsetWidth; // trigger reflow
+        btnEl.classList.add('wrong-shake');
+
+        if (gameState.lives > 1) {
+          gameState.lives--;
+        } else {
+          // Pulihkan semangat adiwira supaya murid boleh terus belajar
+          gameState.lives = 3;
+        }
+        updateHUD();
+
+        feedbackEl.textContent = "❌ Kurang tepat, Adiwira! Fikirkan nilai kejujuran dalam keluarga dan cuba lagi ya!";
+        feedbackEl.classList.remove('hidden');
+      }
+    }
+
+    function showRewardModal(data) {
+      document.getElementById('reward-badge-icon').textContent = data.badgeIcon;
+      document.getElementById('reward-badge-title').textContent = data.badgeName;
+      document.getElementById('reward-motivation').textContent = data.motivation;
+      rewardModalEl.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-continue-mission').addEventListener('click', () => {
+      rewardModalEl.classList.add('hidden');
+      gameState.isModalOpen = false;
+      if (gameState.currentCheckpointIndex < 8) {
+        showToast(`🚪 Laluan ke Checkpoint ${gameState.currentCheckpointIndex + 1} telah dibuka!`);
+      } else {
+        showToast("🏆 Semua 8 Checkpoint selesai! Berlari ke Peti Harta Karun Emas!");
+      }
+    });
+
+    function openTreasureChestSequence() {
+      if (gameState.treasureOpened) return;
+      gameState.treasureOpened = true;
+      gameState.isModalOpen = true;
+      keys.up = keys.down = keys.left = keys.right = keys.sprint = false;
+      resetJoystick();
+
+      sound.playTreasureFanfare();
+      sound.speak(`Tahniah ${gameState.playerName}! Kamu telah berjaya membuka peti harta karun dan menjadi Adiwira Kejujuran!`);
+      chestGlow.intensity = 4.5;
+
+      // Taburan syiling emas & bintang bercahaya
+      spawnParticles(TREASURE_POS.clone().add(new THREE.Vector3(0, 2.2, 0)), 45, [0xfacc15, 0xfef08a, 0xf59e0b], 1.45, true);
+      spawnParticles(TREASURE_POS.clone().add(new THREE.Vector3(0, 2.5, 0)), 30, [0x38bdf8, 0x4ade80, 0xf43f5e], 1.35, false);
+
+      // Animasikan penutup peti terbuka dalam gelung animasi, kemudian paparkan Sijil Digital
+      setTimeout(() => {
+        showVictoryCertificate();
+      }, 2100);
+    }
+
+    function showVictoryCertificate() {
+      document.getElementById('cert-player-name').textContent = gameState.playerName;
+      document.getElementById('cert-score').textContent = gameState.score;
+      document.getElementById('cert-coins').textContent = gameState.coins;
+      document.getElementById('cert-coins-total').textContent = gameState.totalCoins;
+      document.getElementById('cert-checkpoints').textContent = gameState.currentCheckpointIndex;
+
+      const badgesRow = document.getElementById('cert-badges-list');
+      badgesRow.innerHTML = '';
+      gameState.earnedBadges.forEach(b => {
+        const el = document.createElement('span');
+        el.className = 'mini-badge';
+        el.textContent = `${b.icon} ${b.name}`;
+        badgesRow.appendChild(el);
+      });
+
+      victoryScreenEl.classList.remove('hidden');
+    }
+
+    function resetGame(returnToMenu = false) {
+      gameState.score = 0;
+      gameState.coins = 0;
+      gameState.lives = 5;
+      gameState.currentCheckpointIndex = 0;
+      gameState.treasureOpened = false;
+      gameState.earnedBadges = [];
+      gameState.isModalOpen = false;
+      gameState.hitCooldown = 0;
+
+      // Tetapkan semula semua syiling emas
+      coinObjects.forEach(c => {
+        c.collected = false;
+        c.mesh.visible = true;
+      });
+
+      // Tetapkan semula watak ke titik permulaan
+      hero.position.set(0, 0, 4);
+      playerPhysics.velocity.set(0, 0, 0);
+      playerPhysics.onGround = true;
+      playerPhysics.facingAngle = 0;
+      hero.rotation.y = 0;
+
+      // Tetapkan semula semua bintang & pintu halangan
+      checkpointMeshes.forEach((cp, idx) => {
+        cp.solved = false;
+        cp.star.material.color.setHex(0xfacc15);
+        cp.star.material.emissive.setHex(0xf59e0b);
+        barrierMeshes[idx].open = false;
+        const groundY = idx === 3 ? 2.8 : (idx === 6 ? 0.3 : (idx === 7 ? 0.4 : (idx === 4 || idx === 5 ? 0.2 : 0)));
+        barrierMeshes[idx].group.position.y = groundY;
+      });
+
+      // Tutup semula peti harta karun
+      lidPivot.rotation.x = 0;
+      chestGlow.intensity = 0;
+
+      victoryScreenEl.classList.add('hidden');
+      quizModalEl.classList.add('hidden');
+      rewardModalEl.classList.add('hidden');
+
+      updateHUD();
+
+      if (returnToMenu) {
+        gameState.isPlaying = false;
+        hudEl.classList.add('hidden');
+        touchControlsEl.classList.add('hidden');
+        startScreenEl.classList.remove('hidden');
+      } else {
+        gameState.isPlaying = true;
+        hudEl.classList.remove('hidden');
+        touchControlsEl.classList.remove('hidden');
+        showToast("🦸‍♂️ Misi bermula! Sentuh Bintang Emas Checkpoint 1!");
+      }
+    }
+
+    /* =========================================================================
+       13. BUTANG ANTARA MUKA (MULA, AUDIO, PANDUAN, MAIN SEMULA, MENU)
+       ========================================================================= */
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      const rawName = document.getElementById('player-name-input').value.trim();
+      gameState.playerName = rawName || "Adik Adiwira";
+      sound.init();
+      startScreenEl.classList.add('hidden');
+      resetGame(false);
+    });
+
+    document.getElementById('btn-audio-toggle').addEventListener('click', (e) => {
+      const isMuted = sound.toggleMute();
+      e.currentTarget.textContent = isMuted ? '🔇 Senyap' : '🔊 Muzik';
+    });
+
+    document.getElementById('btn-help-hud').addEventListener('click', () => {
+      showToast("⬆️⬇️⬅️➡️ Bergerak • SPACE Lompat • SHIFT Lari Pantas");
+    });
+
+    document.getElementById('btn-replay').addEventListener('click', () => {
+      resetGame(false);
+    });
+
+    document.getElementById('btn-main-menu').addEventListener('click', () => {
+      resetGame(true);
+    });
+
+    /* =========================================================================
+       14. GELUNG ANIMASI & FIZIK 3D UTAMA
+       ========================================================================= */
+    function getGroundHeightAt(x, z, currentY) {
+      let highest = -1.6; // Paras air jika jatuh luar pelantar
+      for (let i = 0; i < platforms.length; i++) {
+        const p = platforms[i];
+        if (x >= p.minX && x <= p.maxX && z >= p.minZ && z <= p.maxZ) {
+          if (p.topY <= currentY + 0.65 && p.topY > highest) {
+            highest = p.topY;
+          }
+        }
+      }
+      return highest;
+    }
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+
+      // Animasi bintang checkpoint, syiling emas, kristal & awan
+      checkpointMeshes.forEach((cp, idx) => {
+        cp.star.rotation.y += dt * 2.2;
+        cp.group.position.y = cp.baseY + Math.sin(elapsed * 3 + idx) * 0.28;
+        const pulse = 1 + Math.sin(elapsed * 4 + idx) * 0.12;
+        cp.ring.scale.set(pulse, pulse, 1);
+      });
+
+      coinObjects.forEach((c, idx) => {
+        if (!c.collected) {
+          c.mesh.rotation.y += dt * 3.4;
+          c.mesh.position.y = c.baseY + Math.sin(elapsed * 4 + idx * 0.6) * 0.16;
+        }
+      });
+
+      // Pergerakan halangan dinamik (balak berguling & kristal bergerak)
+      movingObstacles.forEach((obs) => {
+        if (obs.rangeX > 0) {
+          obs.mesh.position.x = obs.baseX + Math.sin(elapsed * obs.speed + obs.phase) * obs.rangeX;
+        }
+        if (obs.type === 'log' && obs.spinMesh) {
+          obs.spinMesh.rotation.x += dt * 5.5;
+        }
+      });
+
+      crystalObjs.forEach((cr, i) => {
+        cr.rotation.y += dt * 1.4;
+        cr.position.y = 1.1 + Math.sin(elapsed * 2.5 + i) * 0.2;
+      });
+
+      clouds.forEach((cl) => {
+        cl.position.x += dt * 0.8;
+        if (cl.position.x > 85) cl.position.x = -85;
+      });
+
+      // Animasi pintu halangan menurun apabila checkpoint diselesaikan
+      barrierMeshes.forEach((b) => {
+        if (b.open && b.group.position.y > b.targetY) {
+          b.group.position.y -= dt * 7.5;
+        }
+      });
+
+      // Animasi penutup peti harta karun terbuka
+      if (gameState.treasureOpened && lidPivot.rotation.x > -Math.PI * 0.58) {
+        lidPivot.rotation.x -= dt * 2.2;
+      }
+
+      // Kemas kini zarah
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.vel.y -= 14 * dt;
+        pt.mesh.position.addScaledVector(pt.vel, dt);
+        pt.mesh.rotation.y += dt * 7;
+        pt.life -= dt;
+        if (pt.life <= 0) {
+          scene.remove(pt.mesh);
+          particles.splice(i, 1);
+        }
+      }
+
+      // Pergerakan Watak Adiwira
+      if (gameState.isPlaying && !gameState.isModalOpen) {
+        let moveX = 0;
+        let moveZ = 0;
+
+        if (keys.left) moveX -= 1;
+        if (keys.right) moveX += 1;
+        if (keys.up) moveZ -= 1;
+        if (keys.down) moveZ += 1;
+
+        if (Math.abs(joyInput.x) > 0.12 || Math.abs(joyInput.y) > 0.12) {
+          moveX += joyInput.x;
+          moveZ += joyInput.y;
+        }
+
+        const inputLen = Math.hypot(moveX, moveZ);
+        if (inputLen > 1) {
+          moveX /= inputLen;
+          moveZ /= inputLen;
+        }
+
+        const isMoving = inputLen > 0.08;
+        const baseSpeed = keys.sprint ? 17.5 : 11.8;
+
+        if (gameState.hitCooldown > 0) {
+          gameState.hitCooldown -= dt;
+        }
+
+        let nextX = hero.position.x + moveX * baseSpeed * dt;
+        let nextZ = hero.position.z + moveZ * baseSpeed * dt;
+
+        // Had sempadan dunia supaya tidak jatuh jauh ke laut
+        nextX = Math.max(-15, Math.min(15, nextX));
+        nextZ = Math.max(-282, Math.min(8, nextZ));
+
+        // Halangan pintu tenaga aktif (tidak boleh melangkau checkpoint belum selesai!)
+        if (gameState.currentCheckpointIndex < 8) {
+          const activeBarrier = barrierMeshes[gameState.currentCheckpointIndex];
+          if (!activeBarrier.open && nextZ < activeBarrier.z + 1.0) {
+            nextZ = activeBarrier.z + 1.0;
+          }
+        }
+
+        // Halangan langkah naik Bukit Kepercayaan (memerlukan lompatan jika terlalu tinggi)
+        const targetGroundY = getGroundHeightAt(nextX, nextZ, hero.position.y);
+        if (targetGroundY - hero.position.y > 0.65 && playerPhysics.onGround) {
+          // Sekat pergerakan mendatar jika dinding tinggi & pemain tidak melompat
+          nextX = hero.position.x;
+          nextZ = hero.position.z;
+        }
+
+        hero.position.x = nextX;
+        hero.position.z = nextZ;
+
+        // Graviti & Lantai
+        playerPhysics.velocity.y -= 30 * dt;
+        hero.position.y += playerPhysics.velocity.y * dt;
+
+        const floorY = getGroundHeightAt(hero.position.x, hero.position.z, hero.position.y + 0.5);
+        if (hero.position.y <= floorY) {
+          if (floorY < -1.0) {
+            // Jika terjatuh ke dalam air, kembalikan dengan selamat ke tengah laluan
+            hero.position.x = 0;
+            hero.position.y = 1.5;
+            playerPhysics.velocity.y = 0;
+          } else {
+            hero.position.y = floorY;
+            playerPhysics.velocity.y = 0;
+            playerPhysics.onGround = true;
+          }
+        } else {
+          playerPhysics.onGround = false;
+        }
+
+        // Putaran arah watak & animasi lari / lompat
+        if (isMoving) {
+          const targetAngle = Math.atan2(-moveX, -moveZ);
+          let diff = targetAngle - playerPhysics.facingAngle;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          playerPhysics.facingAngle += diff * Math.min(1, dt * 14);
+          hero.rotation.y = playerPhysics.facingAngle;
+
+          playerPhysics.walkCycle += dt * (keys.sprint ? 18 : 12);
+          const swing = Math.sin(playerPhysics.walkCycle) * (keys.sprint ? 0.85 : 0.58);
+          leftLeg.rotation.x = swing;
+          rightLeg.rotation.x = -swing;
+          leftArm.rotation.x = -swing * 0.85;
+          rightArm.rotation.x = swing * 0.85;
+          capePivot.rotation.x = (keys.sprint ? 0.65 : 0.35) + Math.sin(elapsed * 16) * 0.12;
+
+          if (keys.sprint && Math.random() < 0.25 && playerPhysics.onGround) {
+            spawnParticles(hero.position, 1, [0xfef08a, 0xffffff], 0.3);
+          }
+        } else {
+          leftLeg.rotation.x *= 0.8;
+          rightLeg.rotation.x *= 0.8;
+          leftArm.rotation.x *= 0.8;
+          rightArm.rotation.x *= 0.8;
+          capePivot.rotation.x = 0.08 + Math.sin(elapsed * 3) * 0.04;
+        }
+
+        if (!playerPhysics.onGround) {
+          leftArm.rotation.x = -2.4;
+          rightArm.rotation.x = -0.6;
+          leftLeg.rotation.x = 0.45;
+          rightLeg.rotation.x = -0.35;
+          capePivot.rotation.x = 0.7;
+        }
+
+        // Pengumpulan Syiling Emas di sepanjang laluan
+        for (let i = 0; i < coinObjects.length; i++) {
+          const c = coinObjects[i];
+          if (!c.collected) {
+            const distCoin = Math.hypot(hero.position.x - c.mesh.position.x, hero.position.z - c.mesh.position.z);
+            const heightDiff = Math.abs((hero.position.y + 1.2) - c.mesh.position.y);
+            if (distCoin < 1.35 && heightDiff < 1.55) {
+              c.collected = true;
+              c.mesh.visible = false;
+              gameState.coins++;
+              sound.playCoin();
+              spawnParticles(c.mesh.position, 10, [0xfacc15, 0xfef08a, 0xffffff], 0.7, true);
+              updateHUD();
+            }
+          }
+        }
+
+        // Pengesanan pelanggaran dengan halangan mencabar (balak berguling / duri kristal)
+        if (gameState.hitCooldown <= 0) {
+          for (let i = 0; i < movingObstacles.length; i++) {
+            const obs = movingObstacles[i];
+            const dxObs = Math.abs(hero.position.x - obs.mesh.position.x);
+            const dzObs = Math.abs(hero.position.z - obs.mesh.position.z);
+            const dyObs = hero.position.y - obs.baseY;
+            if (dxObs < obs.hitRadiusX && dzObs < obs.hitRadiusZ && dyObs < obs.hitHeight - 0.25 && dyObs > -0.8) {
+              gameState.hitCooldown = 0.85;
+              sound.playObstacleHit();
+              // Tolak watak ke belakang sedikit & melantun kecil
+              hero.position.z = Math.min(8, hero.position.z + 2.4);
+              playerPhysics.velocity.y = 6.5;
+              playerPhysics.onGround = false;
+              spawnParticles(hero.position.clone().add(new THREE.Vector3(0, 1, 0)), 12, [0xf43f5e, 0xfbbf24], 0.8);
+              const flashEl = document.getElementById('hit-flash');
+              flashEl.style.opacity = '1';
+              setTimeout(() => { flashEl.style.opacity = '0'; }, 260);
+              showToast("⚠️ Awas halangan! Lompat menggunakan SPACE untuk melepasi halangan!");
+              break;
+            }
+          }
+        }
+
+        // Pengesanan sentuhan dengan Checkpoint aktif atau Peti Harta Karun
+        if (gameState.currentCheckpointIndex < 8) {
+          const activeCP = checkpointMeshes[gameState.currentCheckpointIndex];
+          const distToCP = Math.hypot(
+            hero.position.x - activeCP.group.position.x,
+            hero.position.z - activeCP.group.position.z
+          );
+          if (distToCP < 2.35 && Math.abs(hero.position.y - (activeCP.baseY - 1.9)) < 2.2) {
+            openCheckpointQuiz(gameState.currentCheckpointIndex);
+          }
+        } else if (!gameState.treasureOpened) {
+          const distToChest = Math.hypot(
+            hero.position.x - TREASURE_POS.x,
+            hero.position.z - TREASURE_POS.z
+          );
+          if (distToChest < 3.4) {
+            openTreasureChestSequence();
+          }
+        }
+
+        // Kemas kini Kompas Arah di HUD
+        const targetPos = gameState.currentCheckpointIndex < 8
+          ? checkpointMeshes[gameState.currentCheckpointIndex].group.position
+          : TREASURE_POS;
+        const dx = targetPos.x - hero.position.x;
+        const dz = targetPos.z - hero.position.z;
+        const distMeters = Math.max(0, Math.round(Math.hypot(dx, dz)));
+        const angleDeg = (Math.atan2(dx, -dz) * 180) / Math.PI;
+        document.getElementById('compass-arrow').style.transform = `rotate(${angleDeg}deg)`;
+        document.getElementById('compass-text').textContent = gameState.currentCheckpointIndex < 8
+          ? `Checkpoint ${gameState.currentCheckpointIndex + 1}: ${distMeters}m di hadapan`
+          : `Peti Harta Karun Emas: ${distMeters}m di hadapan`;
+      }
+
+      // Kamera Third-Person mengikuti watak dengan lancar
+      const desiredCamPos = new THREE.Vector3(
+        hero.position.x * 0.65,
+        hero.position.y + 6.4,
+        hero.position.z + 11.2
+      );
+      camera.position.lerp(desiredCamPos, Math.min(1, dt * 7));
+      camera.lookAt(hero.position.x * 0.8, hero.position.y + 2.0, hero.position.z - 5.5);
+
+      renderer.render(scene, camera);
+    }
+
+    // Responsif apabila saiz tetingkap berubah
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.onload = function () {
+      animate();
+    };
+  </script>
+</body>
+</html>
